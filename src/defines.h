@@ -24,7 +24,6 @@ typedef struct {
   vec3_t pos;
   vec3_t normal;
   vec2_t texture;
-  vec4_t color;
 } VertexObject;
 
 #define Gigabyte(i) 1024 * 1024 * 1024 * i

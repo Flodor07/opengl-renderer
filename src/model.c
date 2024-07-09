@@ -7,10 +7,12 @@
 
 #include "defines.h"
 #include "mathc.h"
+#include "mem.h"
 #include "model.h"
 #include "shader.h"
+#include "utils.h"
 
-void load_model(char *filePath, VecVertex *vertecies, vec4_t color) {
+void load_model(char *filePath, VecVertex *vertecies) {
   vec3_t vertex[MAX_VERTECIES];
   vec3_t vertexNormal[MAX_VERTECIES];
   vec2_t vertexTexture[MAX_VERTECIES];
@@ -72,11 +74,6 @@ void load_model(char *filePath, VecVertex *vertecies, vec4_t color) {
         v->normal[1] = vertexNormal[atoi(face[2]) - 1][1];
         v->normal[2] = vertexNormal[atoi(face[2]) - 1][2];
 
-        v->color[0] = color[0];
-        v->color[1] = color[1];
-        v->color[2] = color[2];
-        v->color[3] = color[3];
-
         vec_vertex_push(vertecies, v);
         free(v);
       }
@@ -89,11 +86,9 @@ void load_model(char *filePath, VecVertex *vertecies, vec4_t color) {
   }
 }
 
-void init_mesh(Mesh *mesh, u32 num_vertecies, VertexObject *vertecies,
-               char *fragment_shader_path, char *vertex_shader_path) {
+void init_mesh(Mesh *mesh, u32 num_vertecies, VertexObject *vertecies) {
   mesh->vertecies = vertecies;
   mesh->num_vertecies = num_vertecies;
-
   // Create our Vertex Buffer and Vertex Array Objects
   glGenVertexArrays(1, &(mesh->VAO));
   glBindVertexArray(mesh->VAO);
@@ -119,10 +114,6 @@ void init_mesh(Mesh *mesh, u32 num_vertecies, VertexObject *vertecies,
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(VertexObject),
                         (void *)offsetof(VertexObject, texture));
 
-  glEnableVertexAttribArray(3);
-  glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(VertexObject),
-                        (void *)offsetof(VertexObject, color));
-
   // note that this is allowed, the call to glVertexAttribPointer registered VBO
   // as the vertex attribute's bound vertex buffer object so afterwards we can
   // safely unbind
@@ -133,13 +124,33 @@ void init_mesh(Mesh *mesh, u32 num_vertecies, VertexObject *vertecies,
   // call to glBindVertexArray anyways so we generally don't unbind VAOs (nor
   // VBOs) when it's not directly necessary.
   glBindVertexArray(0);
+}
+void init_model(Model *model, Mesh *mesh, char *vertex_shader_path,
+                char *fragment_shader_path) {
+  model->mesh = mesh;
+  model->transform = malloc(sizeof(Transform));
 
-  mesh->shader_program =
+  vec3_zero(model->transform->position);
+  vec3_one(model->transform->scale);
+  mat4_identity(model->transform->rotation);
+
+  vec4_one(model->color);
+
+  model->shader_program =
       createShaderProgramm(vertex_shader_path, fragment_shader_path);
 }
 
-void draw_mesh(Mesh *mesh, vec3_t position, mat4_t rotation, vec3_t scaling,
-               mat4_t view, mat4_t projection) {
+void free_model(Model *model) {
+  free(model->transform);
+  free(model);
+}
+
+void free_mesh(Mesh *mesh) {
+  free(mesh->vertecies);
+  free(mesh);
+}
+
+void draw_model(Model *model, mat4_t view, mat4_t projection) {
   struct {
     mat4_t position;
     mat4_t scaling;
@@ -147,25 +158,28 @@ void draw_mesh(Mesh *mesh, vec3_t position, mat4_t rotation, vec3_t scaling,
     mat4_t model;
   } matrices;
 
-  mat4_assign(matrices.rotation, rotation);
+  mat4_assign(matrices.rotation, model->transform->rotation);
 
   mat4_identity(matrices.position);
-  mat4_translation(matrices.position, matrices.position, position);
+  mat4_translation(matrices.position, matrices.position,
+                   model->transform->position);
 
   mat4_identity(matrices.scaling);
-  mat4_scaling(matrices.scaling, matrices.scaling, scaling);
+  mat4_scaling(matrices.scaling, matrices.scaling, model->transform->scale);
 
   mat4_multiply(matrices.model, matrices.rotation, matrices.scaling);
   mat4_multiply(matrices.model, matrices.position, matrices.model);
+  print_mat4(matrices.model);
 
-  glUseProgram(mesh->shader_program);
+  glUseProgram(model->shader_program);
 
-  setMat4(mesh->shader_program, "model", matrices.model);
-  setMat4(mesh->shader_program, "view", view);
-  setMat4(mesh->shader_program, "projection", projection);
+  setMat4(model->shader_program, "model", matrices.model);
+  setMat4(model->shader_program, "view", view);
+  setMat4(model->shader_program, "projection", projection);
+  setVec4(model->shader_program, "vertexColor", model->color);
 
-  glBindVertexArray(mesh->VAO);
-  glDrawArrays(GL_TRIANGLES, 0, mesh->num_vertecies);
+  glBindVertexArray(model->mesh->VAO);
+  glDrawArrays(GL_TRIANGLES, 0, model->mesh->num_vertecies);
 
   glUseProgram(0);
   glBindVertexArray(0);

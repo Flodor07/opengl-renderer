@@ -21,13 +21,25 @@ int main() {
 
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-  vec4_t color = {0.859, 0.506, 0.043, 1.0};
   VecVertex *vec_vertecies = arena_alloc(arena, sizeof(VecVertex));
-  load_model("../models/cube.obj", vec_vertecies, color);
+  load_model("../models/cube.obj", vec_vertecies);
 
-  Mesh *cube_mesh = arena_alloc(arena, sizeof(Mesh));
-  init_mesh(cube_mesh, vec_vertecies->size, vec_vertecies->data,
-            "../shaders/frag.glsl", "../shaders/vert.glsl");
+  Mesh *cube_mesh = malloc(sizeof(Mesh));
+  init_mesh(cube_mesh, vec_vertecies->size, vec_vertecies->data);
+
+  Model *cube_model = malloc(sizeof(Model));
+  init_model(cube_model, cube_mesh, "../shaders/vert.glsl",
+             "../shaders/frag.glsl");
+
+  vec4(cube_model->color, 0.859, 0.506, 0.043, 1.0);
+
+  Model *ground_model = malloc(sizeof(Model));
+  init_model(ground_model, cube_mesh, "../shaders/vert.glsl",
+             "../shaders/frag.glsl");
+
+  vec3(ground_model->transform->position, 0.0, -3.0, 0.0);
+  vec3(ground_model->transform->scale, 10.0, 0.6, 10.0);
+  vec4(ground_model->color, 0.173, 0.2, 0.22, 1.0);
 
   vec3_t camera_pos = {3.0, 0.0, 3.0};
   vec3_t camera_target = {0.0, 0.0, 0.0};
@@ -45,23 +57,15 @@ int main() {
     mat4_perspective(projection, to_radians(90.0), (float)1280 / (float)720,
                      0.1, 100.0);
 
-    float radius = 3;
+    float radius = 8;
     float camX = sin(glfwGetTime()) * radius;
     float camY = cos(glfwGetTime()) * radius;
     vec3(camera->position, camX, 0.0, camY);
 
     create_view_matrix(view, camera);
+    draw_model(cube_model, view, projection);
 
-    vec3_t pos = {0.0, 0.0, 0.0};
-    vec3_t scaling;
-    vec3_one(scaling);
-    vec3_multiply_f(scaling, scaling, 2.0);
-
-    vec3_t rotation_axis = {0.3, 1.0, 3.0};
-    mat4_t roation;
-    mat4_rotation_axis(roation, rotation_axis, 0.5);
-
-    draw_mesh(cube_mesh, pos, roation, scaling, view, projection);
+    draw_model(ground_model, view, projection);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -69,6 +73,8 @@ int main() {
 
   glfwTerminate();
   free(camera);
+  free_model(cube_model);
+  free_model(ground_model);
   arena_free(arena);
   return 0;
 }

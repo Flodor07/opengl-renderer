@@ -43,6 +43,15 @@ char *readFile(const char *filePath, Arena *arena) {
   return buffer;
 }
 
+void print_mat4(mat4_t matrix) {
+  for (int i = 0; i < 4; i++) {
+    printf("[%f | %f | %f | %f]\n", matrix[i * 4 + 0], matrix[i * 4 + 1],
+           matrix[i * 4 + 2], matrix[i * 4 + 3]);
+  }
+
+  printf("\n");
+}
+
 void vec_vertex_print(VecVertex *dynArray) {
   for (int i = 0; i < dynArray->size; i++) {
     VertexObject *vo = &dynArray->data[i];
