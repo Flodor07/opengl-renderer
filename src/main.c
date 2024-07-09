@@ -37,15 +37,17 @@ int main() {
   init_model(cube_model, cube_mesh, "../shaders/vert.glsl",
              "../shaders/frag.glsl");
 
+  vec3_multiply_f(cube_model->transform->scale, cube_model->transform->scale,
+                  2.0);
   vec3(cube_model->color, 0.859, 0.506, 0.043);
 
   Model *ground_model = malloc(sizeof(Model));
   init_model(ground_model, cube_mesh, "../shaders/vert.glsl",
              "../shaders/frag.glsl");
 
-  vec3(ground_model->transform->position, 0.0, -3.0, 0.0);
-  vec3(ground_model->transform->scale, 10.0, 0.6, 10.0);
-  vec3(ground_model->color, 0.173, 0.2, 0.22);
+  vec3(ground_model->transform->position, 0.0, -1.0, 0.0);
+  vec3(ground_model->transform->scale, 10.0, 0.01, 10.0);
+  vec3(ground_model->color, 0.133, 0.145, 0.2);
 
   Model *light_model = malloc(sizeof(Model));
   init_model(light_model, cube_mesh, "../shaders/vert.glsl",
@@ -56,23 +58,25 @@ int main() {
   vec3_multiply_f(light_model->transform->scale, light_model->transform->scale,
                   0.5);
 
-  glClearColor(0.133, 0.145, 0.2, 1.0);
+  glClearColor(0.075, 0.051, 0.078, 1.0);
+
   glEnable(GL_DEPTH_TEST);
+  glEnable(GL_MULTISAMPLE);
 
   while (!glfwWindowShouldClose(window)) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    float radius = 8;
+    float radius = 5;
     float speed = 1.0;
     float camX = sin(glfwGetTime() * speed) * radius;
     float camY = cos(glfwGetTime() * speed) * radius;
-    vec3(context->camera->position, camX, 0.0, camY);
+    vec3(context->camera->position, camX, 5.0, camY);
 
     draw_model(light_model, context);
 
-    for (int i = 0; i < 4; i++) {
-      draw_model(cube_model, context);
+    for (int i = 0; i < 1; i++) {
       vec3(cube_model->transform->position, 0.0, 0.0 + 3 * i, 0.0);
+      draw_model(cube_model, context);
     }
 
     draw_model(ground_model, context);
