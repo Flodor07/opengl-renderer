@@ -32,14 +32,19 @@ int main() {
   Mesh *cube_mesh = malloc(sizeof(Mesh));
   init_mesh(cube_mesh, vec_vertecies->size, vec_vertecies->data);
 
+  VecVertex *vec_alligator = malloc(sizeof(VecVertex));
+  load_model("../models/monkey.obj", vec_alligator);
+
+  Mesh *monkey_mesh = malloc(sizeof(Mesh));
+  init_mesh(monkey_mesh, vec_alligator->size, vec_alligator->data);
+
   // model creation
-  Model *cube_model = malloc(sizeof(Model));
-  init_model(cube_model, cube_mesh, "../shaders/vert.glsl",
+  Model *monkey_model = malloc(sizeof(Model));
+  init_model(monkey_model, monkey_mesh, "../shaders/vert.glsl",
              "../shaders/frag.glsl");
 
-  vec3_multiply_f(cube_model->transform->scale, cube_model->transform->scale,
-                  2.0);
-  vec3(cube_model->color, 0.859, 0.506, 0.043);
+  vec3(monkey_model->color, 0.859, 0.506, 0.043);
+  vec3(monkey_model->transform->position, 0.0, 1.0, 0.0);
 
   Model *ground_model = malloc(sizeof(Model));
   init_model(ground_model, cube_mesh, "../shaders/vert.glsl",
@@ -70,14 +75,11 @@ int main() {
     float speed = 1.0;
     float camX = sin(glfwGetTime() * speed) * radius;
     float camY = cos(glfwGetTime() * speed) * radius;
-    vec3(context->camera->position, camX, 5.0, camY);
+    vec3(context->camera->position, camX, 3.0, camY);
 
     draw_model(light_model, context);
 
-    for (int i = 0; i < 1; i++) {
-      vec3(cube_model->transform->position, 0.0, 0.0 + 3 * i, 0.0);
-      draw_model(cube_model, context);
-    }
+    draw_model(monkey_model, context);
 
     draw_model(ground_model, context);
 
@@ -86,7 +88,7 @@ int main() {
   }
 
   glfwTerminate();
-  free_model(cube_model);
+  free_model(monkey_model);
   free_model(ground_model);
   vec_vertex_free(vec_vertecies);
   free_context(context);

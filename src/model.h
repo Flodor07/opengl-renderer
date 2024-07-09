@@ -5,7 +5,7 @@
 #include "defines.h"
 #include "mem.h"
 #include "utils.h"
-#define MAX_VERTECIES 2000
+#define MAX_VERTECIES 5000
 
 typedef struct {
   vec3_t scale;
