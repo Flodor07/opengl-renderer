@@ -78,5 +78,9 @@ void vec_vertex_push(VecVertex *array, VertexObject *item) {
 
   array->data[array->size] = *item;
   array->size++;
-  // printf("%d\n", array->size);
+}
+
+void vec_vertex_free(VecVertex *dynArray) {
+  free(dynArray->data);
+  free(dynArray);
 }
