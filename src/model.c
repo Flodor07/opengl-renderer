@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "camera.h"
 #include "defines.h"
 #include "mathc.h"
 #include "mem.h"
@@ -134,10 +135,22 @@ void init_model(Model *model, Mesh *mesh, char *vertex_shader_path,
   vec3_one(model->transform->scale);
   mat4_identity(model->transform->rotation);
 
-  vec4_one(model->color);
+  vec3_one(model->color);
 
   model->shader_program =
       createShaderProgramm(vertex_shader_path, fragment_shader_path);
+}
+
+void init_context(Context *context, vec3_t camera_pos, vec3_t camera_target) {
+  context->camera = malloc(sizeof(Camera));
+  create_camera(context->camera, camera_pos, camera_target);
+
+  mat4_perspective(context->projection, to_radians(90.0),
+                   (float)1280 / (float)720, 0.1, 100.0);
+
+  vec3(context->light_pos, 10.0, 5.0, 3.0);
+  vec3_one(context->light_color);
+  // vec3(context->light_color, 0.3, 0.6, 1.0);
 }
 
 void free_model(Model *model) {
@@ -150,7 +163,12 @@ void free_mesh(Mesh *mesh) {
   free(mesh);
 }
 
-void draw_model(Model *model, mat4_t view, mat4_t projection) {
+void free_context(Context *context) {
+  free(context->camera);
+  free(context);
+}
+
+void draw_model(Model *model, Context *context) {
   struct {
     mat4_t position;
     mat4_t scaling;
@@ -169,14 +187,20 @@ void draw_model(Model *model, mat4_t view, mat4_t projection) {
 
   mat4_multiply(matrices.model, matrices.rotation, matrices.scaling);
   mat4_multiply(matrices.model, matrices.position, matrices.model);
-  print_mat4(matrices.model);
+
+  mat4_t view;
+  create_view_matrix(view, context->camera);
 
   glUseProgram(model->shader_program);
 
   setMat4(model->shader_program, "model", matrices.model);
+  setMat4(model->shader_program, "projection", context->projection);
   setMat4(model->shader_program, "view", view);
-  setMat4(model->shader_program, "projection", projection);
-  setVec4(model->shader_program, "vertexColor", model->color);
+
+  setVec3(model->shader_program, "vertexColor", model->color);
+  setVec3(model->shader_program, "lightColor", context->light_color);
+  setVec3(model->shader_program, "lightPos", context->light_pos);
+  setVec3(model->shader_program, "cameraPos", context->camera->position);
 
   glBindVertexArray(model->mesh->VAO);
   glDrawArrays(GL_TRIANGLES, 0, model->mesh->num_vertecies);
